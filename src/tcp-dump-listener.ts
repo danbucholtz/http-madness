@@ -38,7 +38,7 @@ export function startListeningToTcpDump(interfaceToListenOn: string = 'lo0') {
   tcpDump.stdout.on('data', (data) => {
     const results = processTCPDumpOutput(data, remainingString);
     remainingString = results.remainingString;
-    eventEmitter.emit(PACKETS_RECEIVED_EVENT, results.individualRawPackets);
+    emitPackageReceivedEvent(eventEmitter, results.individualRawPackets);
   });
   
   
@@ -47,6 +47,12 @@ export function startListeningToTcpDump(interfaceToListenOn: string = 'lo0') {
       reason: `TCP Dump exited with status code ${code}`
     });
   });
+}
+
+function emitPackageReceivedEvent(eventEmitter: EventEmitter, rawPackets: string[]) {
+  process.nextTick(() => {
+    eventEmitter.emit(PACKETS_RECEIVED_EVENT, rawPackets);
+  })
 }
 
 const TCP_DUMP_REGEX = /\n[0-9]*?:[0-9]*?:[0-9]*?\.[\S\s]*?IP[\S\s]*?close/gm;
