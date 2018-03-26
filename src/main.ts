@@ -1,9 +1,14 @@
+import { EventEmitter } from 'events';
+
+import { initializeController as initializeRawPacketController } from './raw-packet-controller';
 import { startServer } from './server';
-import { startListeningToTcpDump } from './tcp-dump-listener';
+import { initializeController as initializeTcpDumpController } from './tcp-dump-controller';
 
 async function startApplication() {
-  await startServer(8080, '0.0.0.0');
-  startListeningToTcpDump();
+  const eventEmitter = new EventEmitter();
+  // await startServer(80, '0.0.0.0');
+  // initializeRawPacketController(eventEmitter);
+  initializeTcpDumpController(eventEmitter);
 }
 
 

@@ -1,5 +1,5 @@
 
-import { processTCPDumpOutput } from './tcp-dump-listener';
+import { processTCPDumpOutput } from './tcp-dump-controller';
 
 describe('TCP Dump Listener', () => {
   describe('processTCPDumpOutput', () => {

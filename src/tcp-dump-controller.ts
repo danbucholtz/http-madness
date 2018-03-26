@@ -19,31 +19,30 @@ export function processTCPDumpOutput(data: string | Buffer, remainingString: str
   }
 }
 
-export function startListeningToTcpDump(interfaceToListenOn: string = 'lo0') {
-  const eventEmitter = new EventEmitter();
+export function initializeController(emitter: EventEmitter, interfaceToListenOn: string = 'lo0') {
   
   // Command found here - https://stackoverflow.com/questions/4777042/can-i-use-tcpdump-to-get-http-requests-response-header-and-response-body
   const tcpDump = spawn('tcpdump', [
     '-i',
     interfaceToListenOn,
+    '-A',
     '-s', 
     '0',
     '-B',
     '524288',
-    '-A',
-    'tcp[((tcp[12:1] & 0xf0) >> 2):4] = 0x47455420'
+    '(((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp[12]&0xf0)>>2)) != 0)'
   ]);
 
   let remainingString = '';
   tcpDump.stdout.on('data', (data) => {
     const results = processTCPDumpOutput(data, remainingString);
     remainingString = results.remainingString;
-    emitPackageReceivedEvent(eventEmitter, results.individualRawPackets);
+    emitPackageReceivedEvent(emitter, results.individualRawPackets);
   });
   
   
   tcpDump.on('close', (code) => {
-    eventEmitter.emit(CRASH_EVENT, {
+    emitter.emit(CRASH_EVENT, {
       reason: `TCP Dump exited with status code ${code}`
     });
   });
