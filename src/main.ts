@@ -8,8 +8,8 @@ import { initializeController as initializeReportController } from './report-con
 import { startServer } from './server';
 
 async function startApplication() {
-  await startServer(8080, '0.0.0.0');
   const eventEmitter = new EventEmitter();
+  await startServer(8080, '0.0.0.0', eventEmitter);
   initializeCommonLogController(eventEmitter);
   initializeGenerateTrafficController();
   initializeLoggingController();

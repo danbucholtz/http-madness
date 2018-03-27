@@ -1,12 +1,13 @@
+import { EventEmitter } from 'events';
 import { Server } from 'http';
 import { createWriteStream } from 'fs';
 import { join } from 'path';
 
 import * as express from 'express';
-import * as morgan from 'morgan';
+import { commonLogMiddleware } from './common-log-middleware';
 
 
-export function startServer(port: number, host: string): Promise<StartServerResponse> {
+export function startServer(port: number, host: string, emitter: EventEmitter): Promise<StartServerResponse> {
   return new Promise((resolve, reject) => {
     const app = express();
     const server = app.listen(port, host, (err: Error) => {
@@ -20,9 +21,9 @@ export function startServer(port: number, host: string): Promise<StartServerResp
     });
 
     // log all requests to access.log
-    app.use(morgan('common', {
-      stream: createWriteStream(join(__dirname, 'access.log'), {flags: 'a', autoClose: false})
-    }));
+    app.use((request: any, response: any, next: Function) => {
+      commonLogMiddleware(request, response, next, emitter);
+    });
 
     app.get('*', (request: any, response: any) => {
       response.statusCode = 200;
