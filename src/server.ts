@@ -1,5 +1,10 @@
-import * as express from 'express';
 import { Server } from 'http';
+import { createWriteStream } from 'fs';
+import { join } from 'path';
+
+import * as express from 'express';
+import * as morgan from 'morgan';
+
 
 export function startServer(port: number, host: string): Promise<StartServerResponse> {
   return new Promise((resolve, reject) => {
@@ -13,6 +18,11 @@ export function startServer(port: number, host: string): Promise<StartServerResp
         expressApp: app
       });
     });
+
+    // log all requests to access.log
+    app.use(morgan('common', {
+      stream: createWriteStream(join(__dirname, 'access.log'), {flags: 'a', autoClose: false})
+    }));
 
     app.get('*', (request: any, response: any) => {
       response.statusCode = 200;

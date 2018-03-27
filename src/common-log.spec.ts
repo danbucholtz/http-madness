@@ -1,4 +1,5 @@
 import {
+  commonLogToHttpData,
   getContentLengthFromCLF,
   getDateFromCLF,
   getHttpEndpointFromCLF,
@@ -128,6 +129,23 @@ describe('Common Log', () => {
       const sampleLog = `127.0.0.1 user-identifier frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326`;
       const result = getIPAddressFromCLF(sampleLog);
       expect(result).toEqual('127.0.0.1');
+    });
+  });
+
+  describe('commonLogToHttpData', () => {
+    it('should create an object with the correct data', () => {
+      const sampleLog = `127.0.0.1 user-identifier frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326`;
+      const result = commonLogToHttpData(sampleLog);
+      expect(result.sourceIpAddress).toEqual('127.0.0.1');
+      expect(result.userIdentifier).toEqual('user-identifier');
+      expect(result.user).toEqual('frank');
+      expect(result.date.toString()).toEqual('Tue Oct 10 2000 13:55:36 GMT-0500 (CDT)');
+      expect(result.httpMethod).toEqual('GET');
+      expect(result.endpoint).toEqual('/apache_pb.gif');
+      expect(result.httpProtocol).toEqual('HTTP/1.0');
+      expect(result.statusCode).toEqual(200);
+      expect(result.contentLength).toEqual(2326);
+      expect(result.rawLog).toEqual(sampleLog);
     });
   });
 });

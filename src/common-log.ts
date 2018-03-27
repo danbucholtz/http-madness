@@ -1,26 +1,22 @@
 import { getMonthFromShortString } from './date-utils';
-export interface HTTPPacket {
-  sourceIpAddress: string;
-  user: string;
-  date: Date;
-  httpMethod: string;
-  endpoint: string;
-  httpProtocol: string;
-  statusCode: number;
-  responseLength: number;
-}
+import { HTTPRequestResponseData } from './interfaces';
 
-export function packetToCommonLog(packet: HTTPPacket): string{
-  return '';
+export function commonLogToHttpData(commonLog: string): HTTPRequestResponseData {
+  const date = getDateFromCLF(commonLog);
+  return {
+    sourceIpAddress: getIPAddressFromCLF(commonLog),
+    userIdentifier: getUserIdentifierFromCLF(commonLog),
+    user: getUsernameFromCLF(commonLog),
+    date: date,
+    dateInMillis: date.getTime(),
+    httpMethod: getHttpMethodFromCLF(commonLog),
+    endpoint: getHttpEndpointFromCLF(commonLog),
+    httpProtocol: getHttpProtocolFromCLF(commonLog),
+    statusCode: getStatusCodeFromCLF(commonLog),
+    contentLength: getContentLengthFromCLF(commonLog),
+    rawLog: commonLog
+  }
 }
-
-export function commonLogToPacket(commonLog: string): HTTPPacket {
-  return null;
-}
-
-/*
-127.0.0.1 user-identifier frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326
-*/
 
 export function getStatusCodeFromCLF(commonLog: string): number {
   const statusCode = singleMatchGroup(STATUS_CODE_REGEX, commonLog);
