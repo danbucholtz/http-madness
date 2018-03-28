@@ -99,7 +99,7 @@ function singleMatchGroup(regex: RegExp, input: string) {
 }
 
 const HTTP_METHOD_REGEX = /"([\S]*?)\s[\S\s]*?"/gm;
-const HTTP_ENDPOINT_REGEX = /"[\S]*?\s([\S]*?)\s[\S\s]*?"/gm;
+const HTTP_ENDPOINT_REGEX = /"[\S]*?\s(\/[\S]*?)[\/|\s][\S\s]*?"/gm;
 const HTTP_PROTOCOL_REGEX = /"[\S]*?\s[\S]*?\s([\S]*?)"/gm;
 const STATUS_CODE_REGEX = /"[\S\s]*?"\s([0-9]*?)\s/gm;
 const DATE_REGEX = /\[([\s\S]*?)\]/gm;

@@ -70,6 +70,18 @@ describe('Common Log', () => {
       const result = getHttpEndpointFromCLF(sampleLog);
       expect(result).toEqual('/apache_pb.gif');
     });
+
+    it('should remove any sections after the first', () => {
+      const sampleLog = `127.0.0.1 user-identifier frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb/taco.gif HTTP/1.0" 200 2326`;
+      const result = getHttpEndpointFromCLF(sampleLog);
+      expect(result).toEqual('/apache_pb');
+    });
+
+    it('should remove any sections after the first when there are several', () => {
+      const sampleLog = `127.0.0.1 user-identifier frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb/taco/banana/apple.gif HTTP/1.0" 200 2326`;
+      const result = getHttpEndpointFromCLF(sampleLog);
+      expect(result).toEqual('/apache_pb');
+    });
   });
 
   describe('getHttpProtocolFromCLF', () => {
