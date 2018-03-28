@@ -2,11 +2,16 @@
 import { commonLogToHttpData } from './common-log';
 import { convertDateToCommonLogFormat } from './date-utils';
 import {
+  getCurrentAlertStatusInternal,
   getEndpointsWithMoreHitsThan,
   getMeanApiHits,
   getMostHitEndpoints,
-  removeOldData
+  isSystemAlerting,
+  removeOldData,
+  updateAlertStatusInternal
 } from './data-store';
+import * as defaults from './defaults';
+import { HTTPRequestResponseData, SystemAlert } from './interfaces';
 
 describe('Data Store', () => {
   describe('getMostHitEndpoints', () => {
@@ -138,6 +143,111 @@ describe('Data Store', () => {
       expect(results.updatedQueue.length).toEqual(2);
       expect(results.updatedQueue[0]).toEqual(entryFour);
       expect(results.updatedQueue[1]).toEqual(entryFive);
+    });
+  });
+
+  describe('isSystemAlerting', () => {
+    it('should be false when queue length is < n', () => {
+      const empty: HTTPRequestResponseData[] = [];
+      const result = isSystemAlerting(empty);
+      expect(result).toEqual(false);
+    });
+
+    it('should be true when queue length is > n', () => {
+      const full: HTTPRequestResponseData[] = [];
+      for (let i = 0; i < 250; i++) {
+        full.push({} as any);
+      }
+      const result = isSystemAlerting(full);
+      expect(result).toEqual(true);
+    });
+  });
+
+  describe('getCurrentAlertStatusInternal', () => {
+    it('should return false when the queue is empty', () => {
+      const empty: SystemAlert[] = [];
+      const result = getCurrentAlertStatusInternal(empty);
+      expect(result.date).toEqual(null);
+      expect(result.isAlerting).toEqual(false);
+    });
+  });
+
+  describe('updateAlertStatusInternal', () => {
+    it('should return false when the system status does not change', () => {
+      const queue: HTTPRequestResponseData[] = [];
+      const alertQueue: SystemAlert[] = [];
+      const result = updateAlertStatusInternal(queue, alertQueue);
+      expect(result).toEqual(false);
+      expect(queue.length).toEqual(0);
+      expect(alertQueue.length).toEqual(0);
+    });
+
+    it('should return false when the system is not alerting and wasnt previously alerting', () => {
+      const queue: HTTPRequestResponseData[] = [];
+      const alertQueue: SystemAlert[] = [{
+        date: new Date(),
+        isAlerting: false,
+        numberOfHits: 0
+      }];
+      const result = updateAlertStatusInternal(queue, alertQueue);
+      expect(result).toEqual(false);
+      expect(queue.length).toEqual(0);
+      expect(alertQueue.length).toEqual(1);
+    });
+
+    it('should return true when the system is not alerting but previously was alerting', () => {
+      const queue: HTTPRequestResponseData[] = [];
+      const alertQueueEntry: SystemAlert = {
+        date: new Date(),
+        isAlerting: true,
+        numberOfHits: 10
+      };
+      const alertQueue: SystemAlert[] = [alertQueueEntry];
+      const result = updateAlertStatusInternal(queue, alertQueue);
+      expect(result).toEqual(true);
+      expect(queue.length).toEqual(0);
+      expect(alertQueue.length).toEqual(2);
+      expect(alertQueue[0]).toEqual(alertQueueEntry)
+      expect(alertQueue[1].isAlerting).toEqual(false)
+    });
+
+    it('should return false when the system is alerting and previously was alerting', () => {
+      const queueEntry: any = {};
+      const queue: HTTPRequestResponseData[] = [queueEntry];
+      const alertQueueEntry: SystemAlert = {
+        date: new Date(),
+        isAlerting: true,
+        numberOfHits: 10
+      };
+      const alertQueue: SystemAlert[] = [alertQueueEntry];
+
+      spyOn(defaults, defaults.getAlertThreshold.name).and.returnValue(0);
+      const result = updateAlertStatusInternal(queue, alertQueue);
+      expect(result).toEqual(false);
+      expect(queue.length).toEqual(1);
+      expect(alertQueue.length).toEqual(1);
+      expect(alertQueue[0]).toEqual(alertQueueEntry);
+      expect(defaults.getAlertThreshold).toHaveBeenCalled();
+    });
+
+    it('should return true when the system is alerting and previously was not alerting', () => {
+      const queueEntry: any = {};
+      const queue: HTTPRequestResponseData[] = [queueEntry];
+      const alertQueueEntry: SystemAlert = {
+        date: new Date(),
+        isAlerting: false,
+        numberOfHits: 10
+      };
+      const alertQueue: SystemAlert[] = [alertQueueEntry];
+
+      spyOn(defaults, defaults.getAlertThreshold.name).and.returnValue(0);
+      const result = updateAlertStatusInternal(queue, alertQueue);
+      expect(result).toEqual(true);
+      expect(queue.length).toEqual(1);
+      expect(alertQueue.length).toEqual(2);
+      expect(alertQueue[0]).toEqual(alertQueueEntry);
+      expect(alertQueue[1].isAlerting).toEqual(true);
+      expect(defaults.getAlertThreshold).toHaveBeenCalled();
     });
   });
 });

@@ -1,17 +1,26 @@
 import { EventEmitter } from 'events';
 
 import { HTTP_DATA_PROCESSED_EVENT, SNAPSHOT_REPORT_CREATED_EVENT } from './constants';
-import { 
+
+import {
+  updateAlertStatus,
   cleanUpLongDurationData,
   cleanUpShortDurationData,
   getEndpointsWithMoreHitsThanLongTerm,
   getEndpointsWithMoreHitsThanShortTerm,
+  getHistoricSystemAlerts,
   getMeanApiHitsLongDuration,
   getMeanApiHitsShortDuration,
   getMostHitEndpointsLongDuration,
   getMostHitEndpointsShortDuration,
   receiveNewHttpData
 } from './data-store';
+
+import {
+  getLongDurationInMillis,
+  getShortDurationInMillis,
+  getSignificantTrafficMultiplier
+} from './defaults';
 
 import { HTTPRequestResponseData, SnapshotReport} from './interfaces';
 
@@ -20,14 +29,15 @@ export function initializeController(emitter: EventEmitter) {
     receiveNewHttpData(httpRequestResponseDataObjects);
   });
 
-  setInterval(() => processTenSecondUpdate(emitter), TEN_SECONDS_IN_MILLIS);
-  setInterval(processTwoMinuteUpdate, TWO_MINUTES_IN_MILLIS);
+  setInterval(() => processShortDurationUpdate(emitter), getShortDurationInMillis());
+  setInterval(processLongDurationUpdate, getLongDurationInMillis());
 }
 
-export function processTenSecondUpdate(emitter: EventEmitter) {
+export function processShortDurationUpdate(emitter: EventEmitter) {
   // first clean up the short term data, then do some calculationzzz
   const date = new Date();
   cleanUpShortDurationData();
+  const hasAlertStatusChanged = updateAlertStatus();
   
   const shortTermMeanApiHits = getMeanApiHitsShortDuration();
   const longTermMeanApiHits = getMeanApiHitsLongDuration();
@@ -37,17 +47,15 @@ export function processTenSecondUpdate(emitter: EventEmitter) {
     longTermMostHits: getMostHitEndpointsLongDuration(),
     shortTermMeanApiHits,
     longTermMeanApiHits,
-    shortTermApisWithMoreHits: getEndpointsWithMoreHitsThanShortTerm(shortTermMeanApiHits * SIGNIFICANT_TRAFFIC_MULTIPLIER),
-    longTermApisWithMoreHits: getEndpointsWithMoreHitsThanLongTerm(longTermMeanApiHits * SIGNIFICANT_TRAFFIC_MULTIPLIER)
+    shortTermApisWithMoreHits: getEndpointsWithMoreHitsThanShortTerm(shortTermMeanApiHits * getSignificantTrafficMultiplier()),
+    longTermApisWithMoreHits: getEndpointsWithMoreHitsThanLongTerm(longTermMeanApiHits * getSignificantTrafficMultiplier()),
+    hasAlertStatusChanged,
+    historicSystemAlerts: getHistoricSystemAlerts()
   };
 
   emitter.emit(SNAPSHOT_REPORT_CREATED_EVENT, snapshotReport);
 }
 
-export function processTwoMinuteUpdate() {
+export function processLongDurationUpdate() {
   cleanUpLongDurationData();
 }
-
-const TWO_MINUTES_IN_MILLIS = 120 * 1000;
-const TEN_SECONDS_IN_MILLIS = 10 * 1000;
-const SIGNIFICANT_TRAFFIC_MULTIPLIER = 2;

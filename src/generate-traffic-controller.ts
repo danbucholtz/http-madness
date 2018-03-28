@@ -1,15 +1,23 @@
 import * as request from 'request';
 import { getRandomInt } from './utils';
+import { GENERATE_TRAFFIC_POLLING_INTERVAL_MILLIS } from './constants';
 
 export function initializeController() {
-  setInterval(generateTraffic, GENERATE_TRAFFIC_INTERVAL_IN_MILLIS)
+  beginPolling();
+}
+
+function beginPolling() {
+  setTimeout(async () => {
+    await generateTraffic();
+    beginPolling();
+  }, GENERATE_TRAFFIC_POLLING_INTERVAL_MILLIS)
 }
 
 export async function generateTraffic() {
+  console.log('sending request');
   const randomSuffixIndex = getRandomInt(0, suffixs.length - 1);
   const randomSuffix = suffixs[randomSuffixIndex];
   const url = `http://localhost:8080${randomSuffix}`;
-  console.log('sending request');
   await makeRequest(url);
 }
 
@@ -40,5 +48,3 @@ const suffixs = [
   '/cobb',
   '/cobb/18'
 ];
-
-const GENERATE_TRAFFIC_INTERVAL_IN_MILLIS = 1000;

@@ -1,6 +1,8 @@
+import { getAlertThreshold } from './defaults';
 import {
   HTTPRequestResponseData,
-  NumberOfHits
+  NumberOfHits,
+  SystemAlert
 } from './interfaces';
 
 let shortDurationQueue: HTTPRequestResponseData[] = [];
@@ -8,6 +10,8 @@ let longDurationQueue: HTTPRequestResponseData[] = [];
 
 let shortDurationEndpointMap = new Map<string, number>();
 let longDurationEndpointMap = new Map<string, number>();
+
+const systemAlertQueue: SystemAlert[] = [];
 
 export function receiveNewHttpData(httpRequestResponseDataObjects: HTTPRequestResponseData[]) {
   shortDurationQueue = shortDurationQueue.concat(httpRequestResponseDataObjects);
@@ -132,3 +136,61 @@ export function removeOldData(minimumMillis: number, queue: HTTPRequestResponseD
   }
   
 }
+
+export function updateAlertStatus(): boolean {
+  // return true when the status of the system has changed, false when it has not
+  return updateAlertStatusInternal(longDurationQueue, systemAlertQueue);
+}
+
+export function updateAlertStatusInternal(queue: HTTPRequestResponseData[], alertQueue: SystemAlert[]): boolean {
+  // if the alert status is alerting, we need to check if the system is still alerting. If it is, do nothing. If it's not, push a new entry into the queue.
+  const previousStatus = getCurrentAlertStatusInternal(alertQueue);
+  if (isSystemAlerting(queue)) {
+    // okay cool, the system is alerting
+    if (!previousStatus.isAlerting) {
+      alertQueue.push({
+        isAlerting: true,
+        date: new Date(),
+        numberOfHits: queue.length
+      });
+      return true;
+    }
+  } else {
+    // okay, the system is not alerting, we need to check if the top entry in the queue is alerting. If it is, create a new entry where it's not alerting
+    if (previousStatus.isAlerting) {
+      // okay cool, turn it off
+      alertQueue.push({
+        isAlerting: false,
+        date: new Date(),
+        numberOfHits: queue.length
+      });
+      return true;
+    }
+  }
+  return false;
+}
+
+export function getCurrentAlertStatus(): SystemAlert {
+  return getCurrentAlertStatusInternal(systemAlertQueue);
+}
+
+export function getHistoricSystemAlerts() {
+  return systemAlertQueue;
+}
+
+export function getCurrentAlertStatusInternal(queue: SystemAlert[]): SystemAlert {
+  if (queue.length === 0) {
+    return {
+      isAlerting: false,
+      date: null,
+      numberOfHits: 0
+    };
+  }
+
+  return queue[queue.length - 1];
+}
+
+export function isSystemAlerting(queue: HTTPRequestResponseData[]): boolean {
+  return queue.length > getAlertThreshold();
+}
+

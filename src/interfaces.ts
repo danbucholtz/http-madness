@@ -26,4 +26,12 @@ export interface SnapshotReport {
   longTermMeanApiHits: number;
   shortTermApisWithMoreHits: string[];
   longTermApisWithMoreHits: string[];
+  hasAlertStatusChanged: boolean;
+  historicSystemAlerts: SystemAlert[];
+}
+
+export interface SystemAlert {
+  isAlerting: boolean;
+  date: Date;
+  numberOfHits: number;
 }

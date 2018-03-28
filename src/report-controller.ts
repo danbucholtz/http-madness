@@ -54,6 +54,43 @@ ${longTermApisWithMoreHitsString}
 :
 `No endpoints with significant (2x mean) traffic`;
 
+  let alertStatusChangeString = '';
+  if (snapshotReport.hasAlertStatusChanged && snapshotReport.historicSystemAlerts.length) {
+    // get the top entry from the list
+    const topAlert = snapshotReport.historicSystemAlerts[snapshotReport.historicSystemAlerts.length - 1];
+    if (topAlert.isAlerting) {
+      alertStatusChangeString = 
+      `High traffic generated an alert - hits = ${topAlert.numberOfHits}, triggered at ${convertDateToCommonLogFormat(topAlert.date)}
+
+
+`
+    } else {
+      alertStatusChangeString = 
+      `The system recovered from a high-traffic alert at ${convertDateToCommonLogFormat(topAlert.date)}
+
+
+`
+    }
+  }
+
+  let historicAlertString = '';
+  if (snapshotReport.historicSystemAlerts.length) {
+    const historicAlertMessageContent = snapshotReport.historicSystemAlerts.map(historicSystemAlert => {
+      if (historicSystemAlert.isAlerting) {
+        return `The system began alert at ${convertDateToCommonLogFormat(historicSystemAlert.date)}`;
+      }
+      return `The system recovered at ${convertDateToCommonLogFormat(historicSystemAlert.date)}`;
+    }).reduce((accumulator: string, next: string) => {
+      return `${accumulator}
+${next}`
+    });
+    historicAlertString = `
+System Alert History:
+${historicAlertMessageContent}`
+  }
+  
+
+
   const reportString =
 `
 ${dateString} - System Summary
@@ -75,8 +112,11 @@ ${longTermMeanApiHits}
 
 ${longTermSignificantTraffic}
 
+
+${alertStatusChangeString}
+${historicAlertString}
 `;
 
+  console.log(reportString);
   return reportString;
-
 }
