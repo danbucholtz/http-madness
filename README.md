@@ -53,6 +53,8 @@ The project can also be run by executing node directly on the `./dist/main.js` f
 node ./dist/main.js
 ```
 
+To run in the background, use standard unix techniques. Nothing unusual here why the application wouldn't run in the background.
+
 ## Running Tests
 
 [Jest](https://github.com/facebook/jest) is used for testing. The tests are in `./src/*.spec.ts` files. To run the tests, run
