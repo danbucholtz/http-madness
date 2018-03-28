@@ -1,20 +1,22 @@
 import * as request from 'request';
 import { getRandomInt } from './utils';
-import { GENERATE_TRAFFIC_POLLING_INTERVAL_MILLIS } from './constants';
+import { getPollingInterval, shouldGenerateTraffic } from './defaults';
 
 export function initializeController() {
-  beginPolling();
+  if (shouldGenerateTraffic()) {
+    beginPolling();
+  }
+  
 }
 
 function beginPolling() {
   setTimeout(async () => {
     await generateTraffic();
     beginPolling();
-  }, GENERATE_TRAFFIC_POLLING_INTERVAL_MILLIS)
+  }, getPollingInterval())
 }
 
 export async function generateTraffic() {
-  console.log('sending request');
   const randomSuffixIndex = getRandomInt(0, suffixs.length - 1);
   const randomSuffix = suffixs[randomSuffixIndex];
   const url = `http://localhost:8080${randomSuffix}`;
